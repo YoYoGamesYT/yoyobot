@@ -4,7 +4,7 @@ const bot = new Discord.Client();
 const PREFIX = "Y!";
 const prefix = "Y!";
 
-bot.login("NDI3MTEzMTgzMDExMTQzNjgw.DZf5tg.g1A2irdaoWM4G1XiVDtBr_EZu1g");
+bot.login(process.env.TOKEN);
 
 bot.on("ready", function() {
     console.log("Je suis prêt !");
