@@ -1,5 +1,12 @@
 const Discord = require("discord.js");
 const bot = new Discord.Client();
+const low = require('lowdb')
+const FileSync = require('lowdb/adapters/FileSync')
+
+const adapter = new FileSync('database.json')
+const db = low(adapter);
+
+db.defaults({ histoires: [], xp: []}).write()
 
 const PREFIX = "Y!";
 const prefix = "Y!";
@@ -15,7 +22,7 @@ bot.on("ready", () => {
 });
 
 bot.on('message', message => {
-    if(message.content.startsWith(  "Y!purge")) {
+    if(message.content.startsWith("Y!purge")) {
         let myrole = message.guild.member(client.user).hasPermission("MANAGE_MESSAGES"); //Récupère les droits nécessaires
         let yourole = message.guild.member(message.author).hasPermission("MANAGE_MESSAGES"); //Récupère les droits nécessaires
     
@@ -119,6 +126,36 @@ bot.on('message', message => {
         message.channel.sendMessage('feur xD');
   }
 });
+
+bot.on('message', message => {
+    
+    var msgauthor = message.author.id;
+
+    if(message.author.bot)return;
+
+    if(!db.get("xp").find({user: msgauthor}).value()){
+        db.get("xp").push({user: msgauthor, xp: 1}).write();
+    }else{
+        var userxpdb = db.get("xp").filter({user: msgauthor}).find('xp').value();
+        console.log(userxpdb);
+        var userxp = Object.values(userxpdb)
+        console.log(userxp)
+        console.log(`Nombre d'XP: ${userxp[1]}`)
+
+        db.get("xp").find({user: msgauthor}).assign({user: msgauthor, xp: userxp[1] += 1}).write();
+
+    if(message.content == prefix + "xp"){
+        var xp = db.get("xp").filter({user: msgauthor}).find('xp').value()
+        var xpfinal = Object.values(xp);
+        var xp_embed = new Discord.RichEmbed()
+            .setDescription(`Stat des XP de ${message.author.username}`)
+            .setColor("F4D03F")
+            .addField("XP :", `${xpfinal[1]} XP`)
+            .setFooter("By YoYo", message.author.avatarURL)
+            .setTimestamp()
+        message.channel.send({embed: xp_embed});
+
+}}});
 
 bot.on("message", async message => {
     if(message.author.bot) return;
@@ -360,16 +397,44 @@ bot.on("message", async message => {
     
         return message.channel.send(serverembed);
       }
-      if (message.content.startsWith(PREFIX + "ping")) {
+
+      if(cmd === `${PREFIX}ping`){
         var now = require('performance-now');
         var endTime = now();
         var startTime = now();
         var embed = new Discord.RichEmbed()
-        .setColor("#E80B3E")
+        .setColor("E80B3E")
         .setTitle("Voici le ping du bot")
         .addField(":ping_pong: " + Math.round(endTime - startTime) + " ms.",(""))
         .setTimestamp()
         .setFooter("By YoYo", message.author.avatarURL)
             message.channel.send(embed)
     }
+
+    if(message.content.startsWith(prefix + "changeprefix")){
+        if(message.member.permissions.has('ADMINISTRATOR')){
+            if(!args[1]) return message.reply("Met un prefix");
+                prefix = args[1]
+                message.reply("Le préfix a bien été changer");
+        }
+
+        if (message.content.startsWith(prefix + "say")) {
+            var msg = message.content.substr('4')
+            message.delete(message.author);
+            message.channel.send(msg);
+        }
+    }
+
+bot.on("guildMemberAdd", member => {
+    member.guild.channels.find("name", "join-leave-bye").send(`Bienvenue ${member} !`)
+})
+
+bot.on("guildMemberRemove", member => {
+    member.guild.channels.find("name", "join-leave-bye").send(`${member} viens de quitter !`)
+})
+
+bot.on("guildMemberAdd", member => {
+    var role = member.guild.roles.find('name', 'Arrivant 🖐');
+    member.addRole(role)
+})
   });
